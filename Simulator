@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified SDE Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        canvas {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Unified SDE Simulator</h1>
+        <div class="form-group">
+            <label for="processType">Select Process Type</label>
+            <select id="processType" onchange="updateInputs()">
+                <option value="Bernoulli">Bernoulli Process</option>
+                <option value="RandomWalk">Random Walk</option>
+                <option value="Poisson">Poisson Process</option>
+                <option value="Brownian">Brownian Motion</option>
+            </select>
+        </div>
+
+        <div id="inputFields">
+            <!-- Dynamic input fields will appear here -->
+        </div>
+
+        <button class="button" onclick="runSimulation()">Run Simulation</button>
+
+        <canvas id="simulationChart"></canvas>
+    </div>
+
+    <script>
+        // Update input fields based on selected process type
+        function updateInputs() {
+            const processType = document.getElementById("processType").value;
+            const inputFieldsDiv = document.getElementById("inputFields");
+            inputFieldsDiv.innerHTML = ""; // Clear previous inputs
+
+            if (processType === "Bernoulli") {
+                inputFieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="numHackers">Number of Hackers</label>
+                        <input type="number" id="numHackers" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="numServers">Number of Servers</label>
+                        <input type="number" id="numServers" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="pPenetration">Probability of Penetration</label>
+                        <input type="number" id="pPenetration" value="0.1" step="0.01" min="0" max="1">
+                    </div>
+                `;
+            } else if (processType === "RandomWalk") {
+                inputFieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="numHackers">Number of Hackers</label>
+                        <input type="number" id="numHackers" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="numServers">Number of Servers</label>
+                        <input type="number" id="numServers" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="pPenetration">Probability of Penetration</label>
+                        <input type="number" id="pPenetration" value="0.1" step="0.01" min="0" max="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="relFreq">Relative Frequency</label>
+                        <input type="number" id="relFreq" value="0.5" step="0.01" min="0" max="1">
+                    </div>
+                `;
+            } else if (processType === "Poisson") {
+                inputFieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="numHackers">Number of Hackers</label>
+                        <input type="number" id="numHackers" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="numIntervals">Number of Intervals</label>
+                        <input type="number" id="numIntervals" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="lambdaParam">Lambda (Rate)</label>
+                        <input type="number" id="lambdaParam" value="0.1" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="relFreq">Relative Frequency</label>
+                        <input type="number" id="relFreq" value="0.5" step="0.01" min="0" max="1">
+                    </div>
+                `;
+            } else if (processType === "Brownian") {
+                inputFieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="numSimulations">Number of Simulations</label>
+                        <input type="number" id="numSimulations" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="numIntervals">Number of Intervals</label>
+                        <input type="number" id="numIntervals" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="prob">Probability</label>
+                        <input type="number" id="prob" value="0.5" step="0.01" min="0" max="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="stepSize">Step Size</label>
+                        <input type="number" id="stepSize" value="1" step="0.1" min="0">
+                    </div>
+                `;
+            }
+        }
+
+        // Simulation function based on the selected process
+        function runSimulation() {
+            const processType = document.getElementById("processType").value;
+            let data = [];
+
+            if (processType === "Bernoulli") {
+                const numHackers = parseInt(document.getElementById("numHackers").value);
+                const numServers = parseInt(document.getElementById("numServers").value);
+                const pPenetration = parseFloat(document.getElementById("pPenetration").value);
+                data = bernoulliProcess(numHackers, numServers, pPenetration);
+            } else if (processType === "RandomWalk") {
+                const numHackers = parseInt(document.getElementById("numHackers").value);
+                const numServers = parseInt(document.getElementById("numServers").value);
+                const pPenetration = parseFloat(document.getElementById("pPenetration").value);
+                const relFreq = parseFloat(document.getElementById("relFreq").value);
+                data = randomWalk(numHackers, numServers, pPenetration, relFreq);
+            } else if (processType === "Poisson") {
+                const numHackers = parseInt(document.getElementById("numHackers").value);
+                const numIntervals = parseInt(document.getElementById("numIntervals").value);
+                const lambdaParam = parseFloat(document.getElementById("lambdaParam").value);
+                const relFreq = parseFloat(document.getElementById("relFreq").value);
+                data = poissonProcess(numHackers, numIntervals, lambdaParam, relFreq);
+            } else if (processType === "Brownian") {
+                const numSimulations = parseInt(document.getElementById("numSimulations").value);
+                const numIntervals = parseInt(document.getElementById("numIntervals").value);
+                const prob = parseFloat(document.getElementById("prob").value);
+                const stepSize = parseFloat(document.getElementById("stepSize").value);
+                data = brownianMotion(numSimulations, numIntervals, prob, stepSize);
+            }
+
+            // Render chart
+            renderChart(data, processType);
+        }
+
+        // Bernoulli Process function
+        function bernoulliProcess(numHackers, numServers, pPenetration) {
+            const outcomes = Array.from({ length: numHackers }, () => 
+                Array.from({ length: numServers }, () => Math.random() < pPenetration ? 1 : 0)
+            );
+            const result = outcomes.reduce((acc, curr) => {
+                curr.forEach((val, idx) => acc[idx] += val);
+                return acc;
+            }, Array(numServers).fill(0)).map(val => val / numHackers);
+            return result;
+        }
+
+        // Random Walk function
+        function randomWalk(numHackers, numServers, pPenetration, relFreq) {
+            const steps = Array.from({ length: numHackers }, () => 
+                Array.from({ length: numServers }, () => Math.random() < pPenetration ? 1 : -1)
+            );
+            const result = steps.reduce((acc, curr) => {
+                curr.forEach((val, idx) => acc[idx] += val);
+                return acc;
+            }, Array(numServers).fill(0)).map(val => val / numHackers);
+            return result;
+        }
+
+        // Poisson Process function
+        function poissonProcess(numHackers, numIntervals, lambdaParam, relFreq) {
+            const arrivals = Array.from({ length: numHackers }, () => 
+                Array.from({ length: numIntervals }, () => Math.random() < lambdaParam ? 1 : 0)
+            );
+            const result = arrivals.reduce((acc, curr) => {
+                curr.forEach((val, idx) => acc[idx] += val);
+                return acc;
+            }, Array(numIntervals).fill(0)).map(val => val / numHackers);
+            return result;
+        }
+
+        // Brownian Motion function
+        function brownianMotion(numSimulations, numIntervals, prob, stepSize) {
+            const steps = Array.from({ length: numSimulations }, () => 
+                Array.from({ length: numIntervals }, () => (Math.random() < prob ? stepSize : -stepSize))
+            );
+            const paths = steps.map(step => step.reduce((acc, val) => {
+                acc.push((acc[acc.length - 1] || 0) + val);
+                return acc;
+            }, []));
+            const result = paths[0].map((_, idx) => paths.reduce((acc, curr) => acc + curr[idx], 0) / numSimulations);
+            return result;
+        }
+
+        // Render chart with simulation data
+        function renderChart(data, processType) {
+            const ctx = document.getElementById("simulationChart").getContext("2d");
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: data.length }, (_, i) => i + 1),
+                    datasets: [{
+                        label: `${processType} Simulation`,
+                        data: data,
+                        borderColor: 'rgb(75, 192, 192)',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: 'Time / Interval / Server' }},
+                        y: { title: { display: true, text: 'Value' }}
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
